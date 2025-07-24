@@ -1,0 +1,21 @@
+# Devenv
+.devenv*
+devenv.local.nix
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
+
+# Go binaries
+bash_tool
+chat
+chat_verbose
+edit_tool
+list_files
+read
+read_verbose
+
+# demo files
+fizzbuzz.js
