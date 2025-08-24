@@ -2,7 +2,7 @@
 
 A hands-on workshop for learning how to build AI agents with progressively increasing capabilities. This repository contains six different agent implementations that demonstrate the evolution from a simple chat interface to a fully capable agent with file system access, code search, and tool execution.
 
-
+Refer to the blog post at https://ghuntley.com/agent/ to learn more.
 
 ## 🎯 Learning Objectives
 
