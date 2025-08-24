@@ -1,6 +1,8 @@
-# How to Build an Agent - Workshop
+# How to Build a Coding Agent - Workshop
 
-A hands-on workshop for learning how to build AI agents with progressively increasing capabilities. This repository contains five different agent implementations that demonstrate the evolution from a simple chat interface to a fully capable agent with file system access and tool execution.
+A hands-on workshop for learning how to build AI agents with progressively increasing capabilities. This repository contains six different agent implementations that demonstrate the evolution from a simple chat interface to a fully capable agent with file system access, code search, and tool execution.
+
+
 
 ## 🎯 Learning Objectives
 
@@ -55,7 +57,7 @@ graph TB
 
 ## 📚 Application Progression
 
-The workshop is structured as a progression through five applications, each building upon the previous one's capabilities:
+The workshop is structured as a progression through six applications, each building upon the previous one's capabilities:
 
 ```mermaid
 graph LR
@@ -64,20 +66,23 @@ graph LR
         B --> C[list_files.go<br/>+ Directory Listing]
         C --> D[bash_tool.go<br/>+ Shell Commands]
         D --> E[edit_tool.go<br/>+ File Editing]
+        E --> F[code_search_tool.go<br/>+ Code Search]
     end
     
     subgraph "Tool Capabilities"
-        F[No Tools] --> G[read_file]
-        G --> H[read_file<br/>list_files]
-        H --> I[read_file<br/>list_files<br/>bash]
-        I --> J[read_file<br/>list_files<br/>bash<br/>edit_file]
+        G[No Tools] --> H[read_file]
+        H --> I[read_file<br/>list_files]
+        I --> J[read_file<br/>list_files<br/>bash]
+        J --> K[read_file<br/>list_files<br/>bash<br/>edit_file]
+        K --> L[read_file<br/>list_files<br/>bash<br/>code_search]
     end
     
-    A -.-> F
-    B -.-> G
-    C -.-> H
-    D -.-> I
-    E -.-> J
+    A -.-> G
+    B -.-> H
+    C -.-> I
+    D -.-> J
+    E -.-> K
+    F -.-> L
 ```
 
 ### 1. Basic Chat (`chat.go`)
@@ -168,6 +173,26 @@ go run edit_tool.go
 # Try: "Add a comment to the top of fizzbuzz.js"
 ```
 
+### 6. Code Search Agent (`code_search_tool.go`)
+**Purpose**: Powerful code search capabilities using ripgrep
+
+**Features**:
+- Everything from `list_files.go` and `bash_tool.go`
+- `code_search` tool for finding code patterns
+- Ripgrep integration for fast searching
+- File type filtering and case sensitivity options
+- Pattern matching with regex support
+
+**Key Learning**: Code discovery, pattern matching, and search optimization.
+
+**Usage**:
+```bash
+go run code_search_tool.go
+# Try: "Find all function definitions in Go files"
+# Try: "Search for TODO comments in the codebase"
+# Try: "Find where the Agent struct is defined"
+```
+
 ## 🛠️ Tool System Architecture
 
 The tool system uses a consistent pattern across all applications:
@@ -208,11 +233,19 @@ classDiagram
         +NewStr: string
     }
     
+    class CodeSearchInput {
+        +Pattern: string
+        +Path: string
+        +FileType: string
+        +CaseSensitive: bool
+    }
+    
     Agent --> ToolDefinition : uses
     ToolDefinition --> ReadFileInput : read_file
     ToolDefinition --> ListFilesInput : list_files  
     ToolDefinition --> BashInput : bash
     ToolDefinition --> EditFileInput : edit_file
+    ToolDefinition --> CodeSearchInput : code_search
 ```
 
 ## 🚀 Setup
@@ -262,6 +295,23 @@ You: Read the riddle.txt file
 tool: read_file({"path":"riddle.txt"})
 result: I have a mane but I'm not a lion...
 Claude: This is a riddle! The answer is "a horse"...
+```
+
+### Code Search Operations
+```bash
+$ go run code_search_tool.go
+Chat with Claude (use 'ctrl-c' to quit)
+You: Find all function definitions in Go files
+tool: code_search({"pattern":"func ","file_type":"go"})
+result: edit_tool.go:20:func main() {
+edit_tool.go:58:func NewAgent(
+edit_tool.go:323:func ReadFile(input json.RawMessage) (string, error) {
+Claude: I found several function definitions across the Go files...
+
+You: Search for TODO comments
+tool: code_search({"pattern":"TODO","case_sensitive":false})
+result: No matches found
+Claude: There are no TODO comments in the current codebase.
 ```
 
 ### Debugging with Verbose Mode
@@ -327,6 +377,11 @@ hello          # Custom greeting script
 1. Master `edit_tool.go` for complete file operations
 2. Understand validation and safety measures
 3. Build complete agent workflows
+
+### Phase 6: Advanced Code Discovery
+1. Use `code_search_tool.go` for powerful code searching
+2. Learn ripgrep integration and pattern matching
+3. Practice efficient code discovery and analysis
 
 ## 🔍 Key Concepts Demonstrated
 
