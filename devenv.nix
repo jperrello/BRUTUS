@@ -10,6 +10,7 @@
     pkgs.nodejs_20
     pkgs.nodePackages.typescript
     pkgs.nodePackages.ts-node
+    pkgs.ripgrep
   ];
 
   # https://devenv.sh/languages/
@@ -47,6 +48,7 @@
     tsc --version
     rustc --version
     dotnet --version
+    rg --version
   '';
 
   # https://devenv.sh/tasks/
@@ -64,6 +66,7 @@
     node --version
     rustc --version
     dotnet --version
+    rg --version
   '';
 
   # https://devenv.sh/git-hooks/
