@@ -12,11 +12,11 @@ You don’t need to be an AI expert. Just follow along and build step-by-step!
 
 By the end of this workshop, you’ll understand how to:
 
-✅ Connect to the Anthropic Claude API
-✅ Build a simple AI chatbot
-✅ Add tools like reading files, editing code, and running commands
-✅ Handle tool requests and errors
-✅ Build an agent that gets smarter with each step
+- ✅ Connect to the Anthropic Claude API
+- ✅ Build a simple AI chatbot
+- ✅ Add tools like reading files, editing code, and running commands
+- ✅ Handle tool requests and errors
+- ✅ Build an agent that gets smarter with each step
 
 ---
 
