@@ -1,444 +1,280 @@
-# How to Build a Coding Agent - Workshop
+# 🧠 Build Your Own Coding Agent – Step-by-Step Workshop
 
-A hands-on workshop for learning how to build AI agents with progressively increasing capabilities. This repository contains six different agent implementations that demonstrate the evolution from a simple chat interface to a fully capable agent with file system access, code search, and tool execution.
+Welcome! 👋 This workshop will guide you through building your own **AI-powered coding assistant** — starting from a basic chatbot, and adding powerful tools like file reading, shell command execution, and code searching.
 
-Refer to the blog post at https://ghuntley.com/agent/ to learn more.
+You don’t need to be an AI expert. Just follow along and build step-by-step!
 
-## 🎯 Learning Objectives
+🌐 **Want a detailed overview?** Check out the blog post: [ghuntley.com/agent](https://ghuntley.com/agent/)
 
-By working through this workshop, you will learn:
+---
 
-- How to integrate with the Anthropic Claude API
-- The fundamentals of tool-calling and function execution
-- How to build a robust agent event loop
-- Progressive enhancement of agent capabilities
-- Error handling and logging in agent systems
-- Schema generation for tool parameters
+## 🎯 What You'll Learn
 
-## 🏗️ Architecture Overview
+By the end of this workshop, you’ll understand how to:
 
-All applications share a common architecture pattern with a central event loop that handles user input, sends messages to Claude, processes tool calls, and returns results.
+✅ Connect to the Anthropic Claude API
+✅ Build a simple AI chatbot
+✅ Add tools like reading files, editing code, and running commands
+✅ Handle tool requests and errors
+✅ Build an agent that gets smarter with each step
 
-```mermaid
-graph TB
-    subgraph "Agent Architecture"
-        A[Agent] --> B[Anthropic Client]
-        A --> C[Tool Registry]
-        A --> D[getUserMessage Function]
-        A --> E[Verbose Logging]
-    end
-    
-    subgraph "Shared Event Loop"
-        F[Start Chat Session] --> G[Get User Input]
-        G --> H{Empty Input?}
-        H -->|Yes| G
-        H -->|No| I[Add to Conversation]
-        I --> J[runInference]
-        J --> K[Claude Response]
-        K --> L{Tool Use?}
-        L -->|No| M[Display Text]
-        L -->|Yes| N[Execute Tools]
-        N --> O[Collect Results]
-        O --> P[Send Results to Claude]
-        P --> J
-        M --> G
-    end
-    
-    subgraph "Tool Execution Loop"
-        N --> Q[Find Tool by Name]
-        Q --> R[Execute Tool Function]
-        R --> S[Capture Result/Error]
-        S --> T[Add to Tool Results]
-        T --> U{More Tools?}
-        U -->|Yes| Q
-        U -->|No| O
-    end
+---
+
+## 🛠️ What We're Building
+
+You’ll build 6 versions of a coding assistant. Each version adds more features:
+
+1. **Basic Chat** — talk to Claude
+2. **File Reader** — read code files
+3. **File Explorer** — list files in folders
+4. **Command Runner** — run shell commands
+5. **File Editor** — modify files
+6. **Code Search** — search your codebase with patterns
+
+You’ll end up with a powerful local developer assistant!
+
+---
+
+## 🧱 How It Works (Architecture)
+
+Each agent works like this:
+
+1. Waits for your input
+2. Sends it to Claude
+3. Claude may respond directly or ask to use a tool
+4. The agent runs the tool (e.g., read a file)
+5. Sends the result back to Claude
+6. Claude gives you the final answer
+
+We call this the **event loop** — it's like the agent's heartbeat.
+
+<details>
+<summary>📈 Click to view a simplified diagram</summary>
+
+```
+User → Agent → Claude → Tools → Claude → Agent → You
 ```
 
-## 📚 Application Progression
+</details>
 
-The workshop is structured as a progression through six applications, each building upon the previous one's capabilities:
+---
 
-```mermaid
-graph LR
-    subgraph "Application Progression"
-        A[chat.go<br/>Basic Chat] --> B[read.go<br/>+ File Reading]
-        B --> C[list_files.go<br/>+ Directory Listing]
-        C --> D[bash_tool.go<br/>+ Shell Commands]
-        D --> E[edit_tool.go<br/>+ File Editing]
-        E --> F[code_search_tool.go<br/>+ Code Search]
-    end
-    
-    subgraph "Tool Capabilities"
-        G[No Tools] --> H[read_file]
-        H --> I[read_file<br/>list_files]
-        I --> J[read_file<br/>list_files<br/>bash]
-        J --> K[read_file<br/>list_files<br/>bash<br/>edit_file]
-        K --> L[read_file<br/>list_files<br/>bash<br/>code_search]
-    end
-    
-    A -.-> G
-    B -.-> H
-    C -.-> I
-    D -.-> J
-    E -.-> K
-    F -.-> L
-```
+## 🚀 Getting Started
 
-### 1. Basic Chat (`chat.go`)
-**Purpose**: Establish the foundation - a simple chat interface with Claude
+### ✅ Prerequisites
 
-**Features**:
-- Basic conversation loop
-- User input handling
-- API integration with Anthropic
-- Verbose logging support
+* Go 1.24.2+ or [devenv](https://devenv.sh/) (recommended for easy setup)
+* An [Anthropic API Key](https://www.anthropic.com/product/claude)
 
-**Key Learning**: Understanding the core conversation pattern and API integration.
+### 🔧 Set Up Your Environment
 
-**Usage**:
+**Option 1: Recommended (using devenv)**
+
 ```bash
-go run chat.go
-go run chat.go --verbose  # Enable detailed logging
+devenv shell  # Loads everything you need
 ```
 
-### 2. File Reading Agent (`read.go`)
-**Purpose**: Add the first tool - file reading capability
+**Option 2: Manual setup**
 
-**Features**:
-- Everything from `chat.go`
-- `read_file` tool for reading file contents
-- Tool definition and schema generation
-- Tool execution and result handling
-
-**Key Learning**: How to implement and register tools, handle tool calls from Claude.
-
-**Usage**:
 ```bash
-go run read.go
-# Try: "Read the contents of fizzbuzz.js"
-```
-
-### 3. File Listing Agent (`list_files.go`)
-**Purpose**: Expand file system access with directory listing
-
-**Features**:
-- Everything from `read.go`
-- `list_files` tool for directory exploration
-- Multiple tool registration
-- File system traversal with filtering
-
-**Key Learning**: Managing multiple tools and file system operations.
-
-**Usage**:
-```bash
-go run list_files.go
-# Try: "List all files in this directory"
-# Try: "What files are available and what's in fizzbuzz.js?"
-```
-
-### 4. Bash Command Agent (`bash_tool.go`)
-**Purpose**: Add shell command execution capabilities
-
-**Features**:
-- Everything from `list_files.go`
-- `bash` tool for executing shell commands
-- Command output capture
-- Error handling for failed commands
-
-**Key Learning**: Safe command execution and output handling.
-
-**Usage**:
-```bash
-go run bash_tool.go
-# Try: "Run git status"
-# Try: "List all .go files using bash"
-```
-
-### 5. Full File Editing Agent (`edit_tool.go`)
-**Purpose**: Complete agent with file modification capabilities
-
-**Features**:
-- Everything from `bash_tool.go`
-- `edit_file` tool for modifying files
-- File creation and directory creation
-- String replacement with uniqueness validation
-
-**Key Learning**: File manipulation, validation, and comprehensive agent capabilities.
-
-**Usage**:
-```bash
-go run edit_tool.go
-# Try: "Create a simple Python hello world script"
-# Try: "Add a comment to the top of fizzbuzz.js"
-```
-
-### 6. Code Search Agent (`code_search_tool.go`)
-**Purpose**: Powerful code search capabilities using ripgrep
-
-**Features**:
-- Everything from `list_files.go` and `bash_tool.go`
-- `code_search` tool for finding code patterns
-- Ripgrep integration for fast searching
-- File type filtering and case sensitivity options
-- Pattern matching with regex support
-
-**Key Learning**: Code discovery, pattern matching, and search optimization.
-
-**Usage**:
-```bash
-go run code_search_tool.go
-# Try: "Find all function definitions in Go files"
-# Try: "Search for TODO comments in the codebase"
-# Try: "Find where the Agent struct is defined"
-```
-
-## 🛠️ Tool System Architecture
-
-The tool system uses a consistent pattern across all applications:
-
-```mermaid
-classDiagram
-    class Agent {
-        +client: *anthropic.Client
-        +getUserMessage: func() (string, bool)
-        +tools: []ToolDefinition
-        +verbose: bool
-        +Run(ctx Context) error
-        +runInference(ctx Context, conversation []MessageParam) (*Message, error)
-    }
-    
-    class ToolDefinition {
-        +Name: string
-        +Description: string
-        +InputSchema: ToolInputSchemaParam
-        +Function: func(input json.RawMessage) (string, error)
-    }
-    
-    class ReadFileInput {
-        +Path: string
-    }
-    
-    class ListFilesInput {
-        +Path: string
-    }
-    
-    class BashInput {
-        +Command: string
-    }
-    
-    class EditFileInput {
-        +Path: string
-        +OldStr: string
-        +NewStr: string
-    }
-    
-    class CodeSearchInput {
-        +Pattern: string
-        +Path: string
-        +FileType: string
-        +CaseSensitive: bool
-    }
-    
-    Agent --> ToolDefinition : uses
-    ToolDefinition --> ReadFileInput : read_file
-    ToolDefinition --> ListFilesInput : list_files  
-    ToolDefinition --> BashInput : bash
-    ToolDefinition --> EditFileInput : edit_file
-    ToolDefinition --> CodeSearchInput : code_search
-```
-
-## 🚀 Setup
-
-### Prerequisites
-- [devenv](https://devenv.sh/) (recommended) or Go 1.24.2+
-- Anthropic API key
-
-### Environment Setup
-
-1. **Using devenv (recommended)**:
-```bash
-devenv shell  # Enters development environment with all dependencies
-```
-
-2. **Manual setup**:
-```bash
-# Ensure Go 1.24.2+ is installed
+# Make sure Go is installed
 go mod tidy
 ```
 
-### API Key Configuration
+### 🔐 Add Your API Key
+
 ```bash
 export ANTHROPIC_API_KEY="your-api-key-here"
 ```
 
-## 📖 Usage Examples
+---
 
-### Basic Chat
-```bash
-$ go run chat.go
-Chat with Claude (use 'ctrl-c' to quit)
-You: Hello!
-Claude: Hello! How can I help you today?
-```
+## 🏁 Start with the Basics
 
-### File Operations
-```bash
-$ go run edit_tool.go
-Chat with Claude (use 'ctrl-c' to quit)
-You: What files are in this directory?
-tool: list_files({})
-result: [".devenv.flake.nix",".gitignore","AGENT.md","bash_tool.go"...]
-Claude: I can see several files in this directory, including Go source files for different agent implementations...
+### 1. `chat.go` — Basic Chat
 
-You: Read the riddle.txt file
-tool: read_file({"path":"riddle.txt"})
-result: I have a mane but I'm not a lion...
-Claude: This is a riddle! The answer is "a horse"...
-```
-
-### Code Search Operations
-```bash
-$ go run code_search_tool.go
-Chat with Claude (use 'ctrl-c' to quit)
-You: Find all function definitions in Go files
-tool: code_search({"pattern":"func ","file_type":"go"})
-result: edit_tool.go:20:func main() {
-edit_tool.go:58:func NewAgent(
-edit_tool.go:323:func ReadFile(input json.RawMessage) (string, error) {
-Claude: I found several function definitions across the Go files...
-
-You: Search for TODO comments
-tool: code_search({"pattern":"TODO","case_sensitive":false})
-result: No matches found
-Claude: There are no TODO comments in the current codebase.
-```
-
-### Debugging with Verbose Mode
-```bash
-$ go run edit_tool.go --verbose
-# Provides detailed logging of:
-# - API calls and timing
-# - Tool execution details
-# - File operations
-# - Error traces
-```
-
-## 🧪 Test Files
-
-The repository includes sample files for testing:
-
-- **`fizzbuzz.js`**: A JavaScript FizzBuzz implementation for reading/editing
-- **`riddle.txt`**: A simple riddle for content analysis
-- **`AGENT.md`**: Development environment documentation
-
-## 🔧 Development Environment
-
-This project uses [devenv](https://devenv.sh/) for reproducible development environments with:
-
-- Go toolchain
-- Node.js and TypeScript
-- Python environment
-- Rust toolchain
-- .NET Core
-- Git and common development tools
-
-The environment automatically sets up all dependencies and provides helpful scripts:
+A simple chatbot that talks to Claude.
 
 ```bash
-devenv shell    # Enter development environment
-devenv test     # Run environment tests
-hello          # Custom greeting script
+go run chat.go
 ```
 
-## 🎓 Workshop Flow
-
-### Phase 1: Understanding the Basics
-1. Start with `chat.go` to understand the conversation loop
-2. Examine the API integration and response handling
-3. Experiment with verbose logging
-
-### Phase 2: Adding Tools
-1. Progress to `read.go` to see tool integration
-2. Understand schema generation and tool definitions
-3. Practice with file reading operations
-
-### Phase 3: Building Complexity
-1. Explore `list_files.go` for multiple tool management
-2. Test directory traversal and file system operations
-3. Learn about tool combination strategies
-
-### Phase 4: System Integration
-1. Use `bash_tool.go` to see command execution
-2. Understand error handling and output capture
-3. Practice with system integration
-
-### Phase 5: Full Agent Capabilities
-1. Master `edit_tool.go` for complete file operations
-2. Understand validation and safety measures
-3. Build complete agent workflows
-
-### Phase 6: Advanced Code Discovery
-1. Use `code_search_tool.go` for powerful code searching
-2. Learn ripgrep integration and pattern matching
-3. Practice efficient code discovery and analysis
-
-## 🔍 Key Concepts Demonstrated
-
-### Event Loop Pattern
-All agents use the same core event loop that:
-1. Accepts user input
-2. Maintains conversation history
-3. Calls Claude API with tools
-4. Processes tool use requests
-5. Executes tools and collects results
-6. Returns results to Claude for final response
-
-### Tool Definition Pattern
-```go
-var ToolDefinition = ToolDefinition{
-    Name:        "tool_name",
-    Description: "What the tool does",
-    InputSchema: GenerateSchema[InputStruct](),
-    Function:    ToolFunction,
-}
-```
-
-### Schema Generation
-Automatic JSON schema generation from Go structs using reflection and jsonschema tags.
-
-### Error Handling
-Consistent error handling across all tools with proper logging and user feedback.
-
-### Progressive Enhancement
-Each application builds upon the previous one, demonstrating how to gradually add capabilities to an agent system.
-
-## 🚦 Common Issues and Solutions
-
-### API Key Issues
-- Ensure `ANTHROPIC_API_KEY` is set in your environment
-- Check that your API key has sufficient credits
-
-### Tool Execution Errors
-- Use `--verbose` flag to see detailed error logs
-- Check file permissions for file operations
-- Verify paths are relative to the working directory
-
-### Environment Issues
-- Use `devenv shell` for consistent environment
-- Run `go mod tidy` if dependencies are missing
-- Check Go version compatibility (1.24.2+)
-
-## 🎯 Next Steps
-
-After completing this workshop, consider exploring:
-
-- Adding more specialized tools (web scraping, API calls, etc.)
-- Implementing tool chaining and workflows
-- Adding persistent memory and state management
-- Building web interfaces for your agents
-- Integrating with other AI models and services
+➡️ Try: “Hello!”
+➡️ Add `--verbose` to see detailed logs
 
 ---
 
-This workshop provides a solid foundation for understanding agent architecture and tool integration. Each application demonstrates key concepts that are essential for building production-ready AI agents.
+## 🛠️ Add Tools (One Step at a Time)
+
+### 2. `read.go` — Read Files
+
+Now Claude can read files from your computer.
+
+```bash
+go run read.go
+```
+
+➡️ Try: “Read fizzbuzz.js”
+
+---
+
+### 3. `list_files.go` — Explore Folders
+
+Lets Claude look around your directory.
+
+```bash
+go run list_files.go
+```
+
+➡️ Try: “List all files in this folder”
+➡️ Try: “What’s in fizzbuzz.js?”
+
+---
+
+### 4. `bash_tool.go` — Run Shell Commands
+
+Allows Claude to run safe terminal commands.
+
+```bash
+go run bash_tool.go
+```
+
+➡️ Try: “Run git status”
+➡️ Try: “List all .go files using bash”
+
+---
+
+### 5. `edit_tool.go` — Edit Files
+
+Claude can now **modify code**, create files, and make changes.
+
+```bash
+go run edit_tool.go
+```
+
+➡️ Try: “Create a Python hello world script”
+➡️ Try: “Add a comment to the top of fizzbuzz.js”
+
+---
+
+### 6. `code_search_tool.go` — Search Code
+
+Use pattern search (powered by [ripgrep](https://github.com/BurntSushi/ripgrep)).
+
+```bash
+go run code_search_tool.go
+```
+
+➡️ Try: “Find all function definitions in Go files”
+➡️ Try: “Search for TODO comments”
+
+---
+
+## 🧪 Sample Files (Already Included)
+
+* `fizzbuzz.js`: for file reading and editing
+* `riddle.txt`: a fun text file to explore
+* `AGENT.md`: info about the project environment
+
+---
+
+## 🐞 Troubleshooting
+
+**API key not working?**
+
+* Make sure it’s exported: `echo $ANTHROPIC_API_KEY`
+* Check your quota on [Anthropic’s dashboard](https://www.anthropic.com)
+
+**Go errors?**
+
+* Run `go mod tidy`
+* Make sure you’re using Go 1.24.2 or later
+
+**Tool errors?**
+
+* Use `--verbose` for full error logs
+* Check file paths and permissions
+
+**Environment issues?**
+
+* Use `devenv shell` to avoid config problems
+
+---
+
+## 💡 How Tools Work (Under the Hood)
+
+Tools are like plugins. You define:
+
+* **Name** (e.g., `read_file`)
+* **Input Schema** (what info it needs)
+* **Function** (what it does)
+
+Example tool definition in Go:
+
+```go
+var ToolDefinition = ToolDefinition{
+    Name:        "read_file",
+    Description: "Reads the contents of a file",
+    InputSchema: GenerateSchema[ReadFileInput](),
+    Function:    ReadFile,
+}
+```
+
+Schema generation uses Go structs — so it’s easy to define and reuse.
+
+---
+
+## 🧭 Workshop Path: Learn by Building
+
+| Phase | What to Focus On                                 |
+| ----- | ------------------------------------------------ |
+| **1** | `chat.go`: API integration and response handling |
+| **2** | `read.go`: Tool system, schema generation        |
+| **3** | `list_files.go`: Multiple tools, file system     |
+| **4** | `bash_tool.go`: Shell execution, error capture   |
+| **5** | `edit_tool.go`: File editing, safety checks      |
+| **6** | `code_search_tool.go`: Pattern search, ripgrep   |
+
+---
+
+## 🛠️ Developer Environment (Optional)
+
+If you use [`devenv`](https://devenv.sh/), it gives you:
+
+* Go, Node, Python, Rust, .NET
+* Git and other dev tools
+
+```bash
+devenv shell   # Load everything
+devenv test    # Run checks
+hello          # Greeting script
+```
+
+---
+
+## 🚀 What's Next?
+
+Once you complete the workshop, try building:
+
+* Custom tools (e.g., API caller, web scraper)
+* Tool chains (run tools in a sequence)
+* Memory features (remember things across sessions)
+* A web UI for your agent
+* Integration with other AI models
+
+---
+
+## 📦 Summary
+
+This workshop helps you:
+
+* Understand agent architecture
+* Learn to build smart assistants
+* Grow capabilities step-by-step
+* Practice using Claude and Go together
+
+---
+
+Have fun exploring and building your own AI-powered tools! 💻✨
+
+If you have questions or ideas, feel free to fork the repo, open issues, or connect with the community!
