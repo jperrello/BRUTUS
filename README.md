@@ -22,7 +22,9 @@ By the end of this workshop, you’ll understand how to:
 
 ## 🛠️ What We're Building
 
-You’ll build 6 versions of a coding assistant. Each version adds more features:
+You’ll build 6 versions of a coding assistant. 
+
+Each version adds more features:
 
 1. **Basic Chat** — talk to Claude
 2. **File Reader** — read code files
@@ -31,7 +33,35 @@ You’ll build 6 versions of a coding assistant. Each version adds more features
 5. **File Editor** — modify files
 6. **Code Search** — search your codebase with patterns
 
-You’ll end up with a powerful local developer assistant!
+```mermaid
+graph LR
+    subgraph "Application Progression"
+        A[chat.go<br/>Basic Chat] --> B[read.go<br/>+ File Reading]
+        B --> C[list_files.go<br/>+ Directory Listing]
+        C --> D[bash_tool.go<br/>+ Shell Commands]
+        D --> E[edit_tool.go<br/>+ File Editing]
+        E --> F[code_search_tool.go<br/>+ Code Search]
+    end
+    
+    subgraph "Tool Capabilities"
+        G[No Tools] --> H[read_file]
+        H --> I[read_file<br/>list_files]
+        I --> J[read_file<br/>list_files<br/>bash]
+        J --> K[read_file<br/>list_files<br/>bash<br/>edit_file]
+        K --> L[read_file<br/>list_files<br/>bash<br/>code_search]
+    end
+    
+    A -.-> G
+    B -.-> H
+    C -.-> I
+    D -.-> J
+    E -.-> K
+    F -.-> L
+```
+
+At the end, you’ll end up with a powerful local developer assistant!
+
+
 
 ---
 
@@ -48,16 +78,41 @@ Each agent works like this:
 
 We call this the **event loop** — it's like the agent's heartbeat.
 
-<details>
-<summary>📈 Click to view a simplified diagram</summary>
-
+```mermaid
+graph TB
+    subgraph "Agent Architecture"
+        A[Agent] --> B[Anthropic Client]
+        A --> C[Tool Registry]
+        A --> D[getUserMessage Function]
+        A --> E[Verbose Logging]
+    end
+    
+    subgraph "Shared Event Loop"
+        F[Start Chat Session] --> G[Get User Input]
+        G --> H{Empty Input?}
+        H -->|Yes| G
+        H -->|No| I[Add to Conversation]
+        I --> J[runInference]
+        J --> K[Claude Response]
+        K --> L{Tool Use?}
+        L -->|No| M[Display Text]
+        L -->|Yes| N[Execute Tools]
+        N --> O[Collect Results]
+        O --> P[Send Results to Claude]
+        P --> J
+        M --> G
+    end
+    
+    subgraph "Tool Execution Loop"
+        N --> Q[Find Tool by Name]
+        Q --> R[Execute Tool Function]
+        R --> S[Capture Result/Error]
+        S --> T[Add to Tool Results]
+        T --> U{More Tools?}
+        U -->|Yes| Q
+        U -->|No| O
+    end
 ```
-User → Agent → Claude → Tools → Claude → Agent → You
-```
-
-</details>
-
----
 
 ## 🚀 Getting Started
 
@@ -99,8 +154,8 @@ A simple chatbot that talks to Claude.
 go run chat.go
 ```
 
-➡️ Try: “Hello!”
-➡️ Add `--verbose` to see detailed logs
+* ➡️ Try: “Hello!”
+* ➡️ Add `--verbose` to see detailed logs
 
 ---
 
@@ -114,7 +169,7 @@ Now Claude can read files from your computer.
 go run read.go
 ```
 
-➡️ Try: “Read fizzbuzz.js”
+* ➡️ Try: “Read fizzbuzz.js”
 
 ---
 
@@ -126,8 +181,8 @@ Lets Claude look around your directory.
 go run list_files.go
 ```
 
-➡️ Try: “List all files in this folder”
-➡️ Try: “What’s in fizzbuzz.js?”
+* ➡️ Try: “List all files in this folder”
+* ➡️ Try: “What’s in fizzbuzz.js?”
 
 ---
 
@@ -139,8 +194,8 @@ Allows Claude to run safe terminal commands.
 go run bash_tool.go
 ```
 
-➡️ Try: “Run git status”
-➡️ Try: “List all .go files using bash”
+* ➡️ Try: “Run git status”
+* ➡️ Try: “List all .go files using bash”
 
 ---
 
@@ -152,8 +207,8 @@ Claude can now **modify code**, create files, and make changes.
 go run edit_tool.go
 ```
 
-➡️ Try: “Create a Python hello world script”
-➡️ Try: “Add a comment to the top of fizzbuzz.js”
+* ➡️ Try: “Create a Python hello world script”
+* ➡️ Try: “Add a comment to the top of fizzbuzz.js”
 
 ---
 
@@ -165,16 +220,16 @@ Use pattern search (powered by [ripgrep](https://github.com/BurntSushi/ripgrep))
 go run code_search_tool.go
 ```
 
-➡️ Try: “Find all function definitions in Go files”
-➡️ Try: “Search for TODO comments”
+* ➡️ Try: “Find all function definitions in Go files”
+* ➡️ Try: “Search for TODO comments”
 
 ---
 
 ## 🧪 Sample Files (Already Included)
 
-* `fizzbuzz.js`: for file reading and editing
-* `riddle.txt`: a fun text file to explore
-* `AGENT.md`: info about the project environment
+1. `fizzbuzz.js`: for file reading and editing
+1. `riddle.txt`: a fun text file to explore
+1. `AGENT.md`: info about the project environment
 
 ---
 
