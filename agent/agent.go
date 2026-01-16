@@ -29,6 +29,7 @@ type Agent struct {
 	systemPrompt string
 	verbose      bool
 	workingDir   string
+	input        *inputReader
 }
 
 // Config holds agent configuration.
@@ -50,6 +51,7 @@ func New(cfg Config) *Agent {
 		systemPrompt: cfg.SystemPrompt,
 		verbose:      cfg.Verbose,
 		workingDir:   cfg.WorkingDir,
+		input:        newInputReader(),
 	}
 }
 
@@ -62,9 +64,8 @@ func (a *Agent) Run(ctx context.Context) error {
 
 	// THE LOOP - this runs until the user exits
 	for {
-		// Step 1: Get user input
-		fmt.Print("\033[94mYou\033[0m: ")
-		userInput, ok := a.getUserInput()
+		// Step 1: Get user input (with autocomplete for commands)
+		userInput, ok := a.input.ReadLine("\033[94mYou\033[0m: ")
 		if !ok {
 			a.log("User input stream ended")
 			break
@@ -77,6 +78,14 @@ func (a *Agent) Run(ctx context.Context) error {
 		if userInput == "quit" || userInput == "exit" {
 			fmt.Println("\033[90mGoodbye!\033[0m")
 			break
+		}
+
+		// Handle slash commands
+		if strings.HasPrefix(userInput, "/") {
+			if a.handleCommand(ctx, userInput) {
+				break
+			}
+			continue
 		}
 
 		a.log("User: %q", userInput)
@@ -173,6 +182,73 @@ func (a *Agent) log(format string, args ...interface{}) {
 	if a.verbose {
 		log.Printf(format, args...)
 	}
+}
+
+func (a *Agent) handleCommand(ctx context.Context, cmd string) bool {
+	switch cmd {
+	case "/models":
+		if err := a.handleModelsCommand(ctx); err != nil {
+			fmt.Printf("\033[91mError: %s\033[0m\n", err)
+		}
+	case "/help":
+		a.handleHelpCommand()
+	case "/clear":
+		fmt.Print("\033[2J\033[H")
+		a.printBanner()
+	case "/exit":
+		fmt.Println("\033[90mGoodbye!\033[0m")
+		return true
+	default:
+		fmt.Printf("\033[91mUnknown command: %s\033[0m\n", cmd)
+		fmt.Println("\033[90mType /help for available commands\033[0m")
+	}
+	fmt.Println()
+	return false
+}
+
+func (a *Agent) handleHelpCommand() {
+	fmt.Println("\033[1;36mAvailable commands:\033[0m")
+	fmt.Println("  \033[93m/models\033[0m  - Select an AI model")
+	fmt.Println("  \033[93m/clear\033[0m   - Clear the screen")
+	fmt.Println("  \033[93m/help\033[0m    - Show this help")
+	fmt.Println("  \033[93m/exit\033[0m    - Exit BRUTUS")
+	fmt.Println()
+	fmt.Println("\033[90mTip: Type / and press Tab to autocomplete\033[0m")
+}
+
+func (a *Agent) handleModelsCommand(ctx context.Context) error {
+	fmt.Println("\033[90mFetching available models...\033[0m")
+
+	models, err := a.provider.ListModels(ctx)
+	if err != nil {
+		return err
+	}
+
+	if len(models) == 0 {
+		fmt.Println("\033[93mNo models available\033[0m")
+		return nil
+	}
+
+	// Build display list
+	var items []string
+	for _, m := range models {
+		items = append(items, m.ID)
+	}
+
+	// Show picker
+	idx, err := pickFromList("Select a model", items, 15)
+	if err != nil {
+		return err
+	}
+
+	if idx >= 0 {
+		a.provider.SetModel(models[idx].ID)
+		fmt.Printf("\033[92mModel set to: %s\033[0m\n\n", models[idx].ID)
+	} else {
+		fmt.Println("\033[90mCancelled\033[0m")
+	}
+
+	return nil
 }
 
 func (a *Agent) printBanner() {
