@@ -19,6 +19,21 @@ type Provider interface {
 
 	// Name returns the provider name for logging.
 	Name() string
+
+	// ListModels returns available models from the provider.
+	ListModels(ctx context.Context) ([]ModelInfo, error)
+
+	// SetModel changes the active model.
+	SetModel(model string)
+
+	// GetModel returns the current model.
+	GetModel() string
+}
+
+// ModelInfo describes an available model.
+type ModelInfo struct {
+	ID   string
+	Name string
 }
 
 // Message represents a conversation message.

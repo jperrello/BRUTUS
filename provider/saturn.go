@@ -71,6 +71,58 @@ func (s *Saturn) Name() string {
 	return fmt.Sprintf("saturn(%s)", s.service.Name)
 }
 
+func (s *Saturn) GetModel() string {
+	return s.model
+}
+
+func (s *Saturn) SetModel(model string) {
+	s.model = model
+}
+
+func (s *Saturn) ListModels(ctx context.Context) ([]ModelInfo, error) {
+	httpReq, err := http.NewRequestWithContext(ctx, "GET", s.service.URL()+"/v1/models", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.service.EphemeralKey != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+s.service.EphemeralKey)
+	}
+
+	resp, err := s.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
+	}
+
+	var modelsResp struct {
+		Data []struct {
+			ID   string `json:"id"`
+			Name string `json:"name"`
+		} `json:"data"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&modelsResp); err != nil {
+		return nil, err
+	}
+
+	var models []ModelInfo
+	for _, m := range modelsResp.Data {
+		name := m.Name
+		if name == "" {
+			name = m.ID
+		}
+		models = append(models, ModelInfo{ID: m.ID, Name: name})
+	}
+
+	return models, nil
+}
+
 // Chat implements the Provider interface using OpenAI-compatible API.
 func (s *Saturn) Chat(ctx context.Context, systemPrompt string, messages []Message, toolDefs []tools.Tool) (Message, error) {
 	// Build OpenAI-format request
@@ -120,8 +172,11 @@ func (s *Saturn) Chat(ctx context.Context, systemPrompt string, messages []Messa
 	return convertFromOpenAIResponse(openAIResp), nil
 }
 
-// healthCheck verifies a service is responsive.
 func healthCheck(svc SaturnService) error {
+	if svc.APIBase != "" {
+		return nil // Remote APIs don't have health endpoints
+	}
+
 	client := &http.Client{Timeout: 2 * time.Second}
 	resp, err := client.Get(svc.URL() + "/v1/health")
 	if err != nil {
