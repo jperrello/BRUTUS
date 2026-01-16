@@ -1,40 +1,62 @@
-.PHONY: build fmt check clean all
+.PHONY: build run clean deps install fmt vet test all examples
 
-# Go binaries to build
-BINARIES := bash_tool chat edit_tool list_files read
+BINARY_NAME := brutus
+GO := go
+GOPATH := $(shell $(GO) env GOPATH)
 
-# Build all binaries
+ifeq ($(OS),Windows_NT)
+	BINARY_NAME := brutus.exe
+	RM := del /Q
+	INSTALL_DIR := $(GOPATH)/bin
+else
+	RM := rm -f
+	INSTALL_DIR := $(GOPATH)/bin
+endif
+
 build:
-	@echo "Building binaries..."
-	go build -o bash_tool bash_tool.go
-	go build -o chat chat.go
-	go build -o edit_tool edit_tool.go
-	go build -o list_files list_files.go
-	go build -o read read.go
+	@echo "Building BRUTUS..."
+	$(GO) build -o $(BINARY_NAME) .
 
-# Format all Go files
-fmt:
-	@echo "Formatting Go files..."
-	go fmt ./...
+run: build
+	./$(BINARY_NAME)
 
-# Check (lint and vet) all Go files
-check:
-	@echo "Running go vet on individual files..."
-	go vet bash_tool.go
-	go vet chat.go
-	go vet edit_tool.go
-	go vet list_files.go
-	go vet read.go
-	@echo "Running go mod tidy..."
-	go mod tidy
+run-verbose: build
+	./$(BINARY_NAME) -verbose
 
-# Clean built binaries
 clean:
-	@echo "Cleaning binaries..."
-	rm -f $(BINARIES)
+	@echo "Cleaning..."
+	$(RM) $(BINARY_NAME)
 
-# Build everything and run checks
-all: fmt check build
+deps:
+	@echo "Installing dependencies..."
+	$(GO) mod tidy
+	$(GO) mod download
 
-# Default target
-.DEFAULT_GOAL := all
+install: build
+	@echo "Installing BRUTUS to $(INSTALL_DIR)..."
+	@mkdir -p $(INSTALL_DIR) 2>/dev/null || true
+	cp $(BINARY_NAME) $(INSTALL_DIR)/$(BINARY_NAME)
+	@echo "Installed! Make sure $(INSTALL_DIR) is in your PATH."
+	@echo "Then run 'brutus' from any directory."
+
+fmt:
+	@echo "Formatting code..."
+	$(GO) fmt ./...
+
+vet:
+	@echo "Running go vet..."
+	$(GO) vet ./...
+
+test:
+	@echo "Running tests..."
+	$(GO) test -v ./...
+
+examples:
+	@echo "Building examples..."
+	$(GO) build -o examples/01-chat/chat ./examples/01-chat
+	$(GO) build -o examples/02-read-tool/read-tool ./examples/02-read-tool
+	$(GO) build -o examples/03-multi-tool/multi-tool ./examples/03-multi-tool
+
+all: deps fmt vet build
+
+.DEFAULT_GOAL := build

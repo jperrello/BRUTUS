@@ -1,335 +1,130 @@
-# 🧠 Build Your Own Coding Agent via a Step-by-Step Workshop
+# BRUTUS
 
-Welcome! 👋 This workshop will guide you through building your own **AI-powered coding assistant** — starting from a basic chatbot, and adding powerful tools like file reading, shell command execution, and code searching.
+A coding agent powered by [Saturn](https://github.com/jperrello/Saturn) - zero-config AI on your network.
 
-You don’t need to be an AI expert. Just follow along and build step-by-step!
+Based on [Geoffrey Huntley's "How to Build a Coding Agent"](https://ghuntley.com/agent/) workshop.
 
-🌐 **Want a detailed overview?** Check out the blog post: [ghuntley.com/agent](https://ghuntley.com/agent/)
+## What is This?
 
----
+BRUTUS is an educational coding agent that demonstrates the core concepts behind tools like Claude Code, Cursor, and Aider. It's designed to be:
 
-## 🎯 What You'll Learn
+- **Understandable**: Clean, well-documented code showing exactly how agents work
+- **Extensible**: Easy to add new tools and capabilities
+- **Network-native**: Uses Saturn for automatic AI discovery - no API keys needed
 
-By the end of this workshop, you’ll understand how to:
+## Requirements
 
-- ✅ Connect to the Anthropic Claude API
-- ✅ Build a simple AI chatbot
-- ✅ Add tools like reading files, editing code, and running commands
-- ✅ Handle tool requests and errors
-- ✅ Build an agent that gets smarter with each step
+- A Saturn server running on your network
+- Go 1.21+
 
----
+That's it. No API keys. No configuration. If you're on a network with Saturn, BRUTUS just works.
 
-## 🛠️ What We're Building
+## The Core Insight
 
-You’ll build 6 versions of a coding assistant. 
+A coding agent is **300 lines of code running in a loop with LLM tokens**:
 
-Each version adds more features:
-
-1. **Basic Chat** — talk to Claude
-2. **File Reader** — read code files
-3. **File Explorer** — list files in folders
-4. **Command Runner** — run shell commands
-5. **File Editor** — modify files
-6. **Code Search** — search your codebase with patterns
-
-```mermaid
-graph LR
-    subgraph "Application Progression"
-        A[chat.go<br/>Basic Chat] --> B[read.go<br/>+ File Reading]
-        B --> C[list_files.go<br/>+ Directory Listing]
-        C --> D[bash_tool.go<br/>+ Shell Commands]
-        D --> E[edit_tool.go<br/>+ File Editing]
-        E --> F[code_search_tool.go<br/>+ Code Search]
-    end
-    
-    subgraph "Tool Capabilities"
-        G[No Tools] --> H[read_file]
-        H --> I[read_file<br/>list_files]
-        I --> J[read_file<br/>list_files<br/>bash]
-        J --> K[read_file<br/>list_files<br/>bash<br/>edit_file]
-        K --> L[read_file<br/>list_files<br/>bash<br/>code_search]
-    end
-    
-    A -.-> G
-    B -.-> H
-    C -.-> I
-    D -.-> J
-    E -.-> K
-    F -.-> L
+```
+1. Get user input
+2. Send to LLM
+3. If LLM wants to use a tool → execute it → go to 2
+4. Show response → go to 1
 ```
 
-At the end, you’ll end up with a powerful local developer assistant!
+That's the entire architecture. Everything else is just tools (what it can do) and prompts (how it behaves).
 
-
-
----
-
-## 🧱 How It Works (Architecture)
-
-Each agent works like this:
-
-1. Waits for your input
-2. Sends it to Claude
-3. Claude may respond directly or ask to use a tool
-4. The agent runs the tool (e.g., read a file)
-5. Sends the result back to Claude
-6. Claude gives you the final answer
-
-We call this the **event loop** — it's like the agent's heartbeat.
-
-```mermaid
-graph TB
-    subgraph "Agent Architecture"
-        A[Agent] --> B[Anthropic Client]
-        A --> C[Tool Registry]
-        A --> D[getUserMessage Function]
-        A --> E[Verbose Logging]
-    end
-    
-    subgraph "Shared Event Loop"
-        F[Start Chat Session] --> G[Get User Input]
-        G --> H{Empty Input?}
-        H -->|Yes| G
-        H -->|No| I[Add to Conversation]
-        I --> J[runInference]
-        J --> K[Claude Response]
-        K --> L{Tool Use?}
-        L -->|No| M[Display Text]
-        L -->|Yes| N[Execute Tools]
-        N --> O[Collect Results]
-        O --> P[Send Results to Claude]
-        P --> J
-        M --> G
-    end
-    
-    subgraph "Tool Execution Loop"
-        N --> Q[Find Tool by Name]
-        Q --> R[Execute Tool Function]
-        R --> S[Capture Result/Error]
-        S --> T[Add to Tool Results]
-        T --> U{More Tools?}
-        U -->|Yes| Q
-        U -->|No| O
-    end
-```
-
-## 🚀 Getting Started
-
-### ✅ Prerequisites
-
-* Go 1.24.2+ or [devenv](https://devenv.sh/) (recommended for easy setup)
-* An [Anthropic API Key](https://www.anthropic.com/product/claude)
-
-### 🔧 Set Up Your Environment
-
-**Option 1: Recommended (using devenv)**
+## Quick Start
 
 ```bash
-devenv shell  # Loads everything you need
+# Make sure you have a Saturn server running on your network
+# See: https://github.com/jperrello/Saturn
+
+# Build
+go build
+
+# Run
+./brutus
 ```
 
-**Option 2: Manual setup**
+If no Saturn server is found, BRUTUS will tell you:
+```
+Error: no saturn services found on network
 
-```bash
-# Make sure Go is installed
-go mod tidy
+BRUTUS requires a Saturn server on your network.
+Start a Saturn beacon or server, then try again.
+See: https://github.com/jperrello/Saturn
 ```
 
-### 🔐 Add Your API Key
+## Project Structure
 
-```bash
-export ANTHROPIC_API_KEY="your-api-key-here"
+```
+brutus/
+├── agent/           # THE LOOP - the core thing to understand
+│   └── agent.go     # ~150 lines, heavily commented
+├── tools/           # What BRUTUS can DO
+│   ├── tool.go      # Tool abstraction
+│   ├── read.go      # Read files
+│   ├── list.go      # List directories
+│   ├── bash.go      # Execute commands
+│   ├── edit.go      # Modify files
+│   └── search.go    # Code search (ripgrep)
+├── provider/        # Where the LLM comes from
+│   ├── provider.go  # Provider interface
+│   ├── discovery.go # Saturn mDNS discovery
+│   └── saturn.go    # OpenAI-compatible client
+├── examples/        # Progressive learning stages
+│   ├── 01-chat/     # Simple chatbot
+│   ├── 02-read/     # Add first tool
+│   └── 03-multi/    # Multiple tools
+├── main.go          # Entry point
+├── LEARNING.md      # How it all works
+└── ADDING_TOOLS.md  # How to extend
 ```
 
----
+## How Saturn Works
 
-## 🏁 Start with the Basics
+When BRUTUS starts, it:
+1. Searches for `_saturn._tcp.local.` services via mDNS
+2. Picks the highest priority (lowest number) server
+3. Gets ephemeral credentials from beacon TXT records
+4. Uses OpenAI-compatible API to talk to the server
 
-### 1. `chat.go` — Basic Chat
+This means **network presence = AI access**. No API keys to manage.
 
-A simple chatbot that talks to Claude.
+## Learning Path
 
-```bash
-go run chat.go
-```
+1. **Start here**: Read `examples/01-chat/main.go` - a simple chatbot
+2. **Add a tool**: Read `examples/02-read-tool/main.go` - introducing tools
+3. **Multiple tools**: Read `examples/03-multi-tool/main.go` - tools working together
+4. **The real thing**: Read `agent/agent.go` - the full implementation
+5. **Extend it**: Read `ADDING_TOOLS.md` - add your own capabilities
 
-* ➡️ Try: “Hello!”
-* ➡️ Add `--verbose` to see detailed logs
+## Options
 
----
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-verbose` | Detailed logging | false |
+| `-model` | Model to request | (server default) |
+| `-max-tokens` | Max response tokens | 8192 |
+| `-timeout` | Discovery timeout | 5s |
+| `-version` | Print version | - |
 
-## 🛠️ Add Tools (One Step at a Time)
+## Why Saturn-Only?
 
-### 2. `read.go` — Read Files
+BRUTUS is designed for networks where Saturn provides AI access. Benefits:
 
-Now Claude can read files from your computer.
+- **Zero config**: No API keys to manage
+- **Shared access**: Multiple tools share one subscription
+- **Ephemeral credentials**: Keys rotate automatically
+- **Network-scoped**: Leave the network, lose access
 
-```bash
-go run read.go
-```
+If you need direct API access, look at the original [ghuntley workshop](https://github.com/ghuntley/how-to-build-a-coding-agent).
 
-* ➡️ Try: “Read fizzbuzz.js”
+## Credits
 
----
+- Original workshop: [ghuntley/how-to-build-a-coding-agent](https://github.com/ghuntley/how-to-build-a-coding-agent)
+- Article: [ghuntley.com/agent](https://ghuntley.com/agent/)
+- Saturn: [jperrello/Saturn](https://github.com/jperrello/Saturn)
 
-### 3. `list_files.go` — Explore Folders
+## License
 
-Lets Claude look around your directory.
-
-```bash
-go run list_files.go
-```
-
-* ➡️ Try: “List all files in this folder”
-* ➡️ Try: “What’s in fizzbuzz.js?”
-
----
-
-### 4. `bash_tool.go` — Run Shell Commands
-
-Allows Claude to run safe terminal commands.
-
-```bash
-go run bash_tool.go
-```
-
-* ➡️ Try: “Run git status”
-* ➡️ Try: “List all .go files using bash”
-
----
-
-### 5. `edit_tool.go` — Edit Files
-
-Claude can now **modify code**, create files, and make changes.
-
-```bash
-go run edit_tool.go
-```
-
-* ➡️ Try: “Create a Python hello world script”
-* ➡️ Try: “Add a comment to the top of fizzbuzz.js”
-
----
-
-### 6. `code_search_tool.go` — Search Code
-
-Use pattern search (powered by [ripgrep](https://github.com/BurntSushi/ripgrep)).
-
-```bash
-go run code_search_tool.go
-```
-
-* ➡️ Try: “Find all function definitions in Go files”
-* ➡️ Try: “Search for TODO comments”
-
----
-
-## 🧪 Sample Files (Already Included)
-
-1. `fizzbuzz.js`: for file reading and editing
-1. `riddle.txt`: a fun text file to explore
-1. `AGENT.md`: info about the project environment
-
----
-
-## 🐞 Troubleshooting
-
-**API key not working?**
-
-* Make sure it’s exported: `echo $ANTHROPIC_API_KEY`
-* Check your quota on [Anthropic’s dashboard](https://www.anthropic.com)
-
-**Go errors?**
-
-* Run `go mod tidy`
-* Make sure you’re using Go 1.24.2 or later
-
-**Tool errors?**
-
-* Use `--verbose` for full error logs
-* Check file paths and permissions
-
-**Environment issues?**
-
-* Use `devenv shell` to avoid config problems
-
----
-
-## 💡 How Tools Work (Under the Hood)
-
-Tools are like plugins. You define:
-
-* **Name** (e.g., `read_file`)
-* **Input Schema** (what info it needs)
-* **Function** (what it does)
-
-Example tool definition in Go:
-
-```go
-var ToolDefinition = ToolDefinition{
-    Name:        "read_file",
-    Description: "Reads the contents of a file",
-    InputSchema: GenerateSchema[ReadFileInput](),
-    Function:    ReadFile,
-}
-```
-
-Schema generation uses Go structs — so it’s easy to define and reuse.
-
----
-
-## 🧭 Workshop Path: Learn by Building
-
-| Phase | What to Focus On                                 |
-| ----- | ------------------------------------------------ |
-| **1** | `chat.go`: API integration and response handling |
-| **2** | `read.go`: Tool system, schema generation        |
-| **3** | `list_files.go`: Multiple tools, file system     |
-| **4** | `bash_tool.go`: Shell execution, error capture   |
-| **5** | `edit_tool.go`: File editing, safety checks      |
-| **6** | `code_search_tool.go`: Pattern search, ripgrep   |
-
----
-
-## 🛠️ Developer Environment (Optional)
-
-If you use [`devenv`](https://devenv.sh/), it gives you:
-
-* Go, Node, Python, Rust, .NET
-* Git and other dev tools
-
-```bash
-devenv shell   # Load everything
-devenv test    # Run checks
-hello          # Greeting script
-```
-
----
-
-## 🚀 What's Next?
-
-Once you complete the workshop, try building:
-
-* Custom tools (e.g., API caller, web scraper)
-* Tool chains (run tools in a sequence)
-* Memory features (remember things across sessions)
-* A web UI for your agent
-* Integration with other AI models
-
----
-
-## 📦 Summary
-
-This workshop helps you:
-
-* Understand agent architecture
-* Learn to build smart assistants
-* Grow capabilities step-by-step
-* Practice using Claude and Go together
-
----
-
-Have fun exploring and building your own AI-powered tools! 💻✨
-
-If you have questions or ideas, feel free to fork the repo, open issues, or connect with the community!
+MIT

@@ -1,21 +1,26 @@
-# Devenv
-.devenv*
-devenv.local.nix
+# Binary
+brutus
+brutus.exe
 
-# direnv
-.direnv
+# Go
+*.test
+*.out
+coverage.txt
 
-# pre-commit
-.pre-commit-config.yaml
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
 
-# Go binaries
-bash_tool
-chat
-chat_verbose
-edit_tool
-list_files
-read
-read_verbose
+# OS
+.DS_Store
+Thumbs.db
 
-# demo files
-fizzbuzz.js
+# Serena
+.serena/
+
+# Environment
+.env
+.envrc

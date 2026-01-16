@@ -1,6 +1,6 @@
-module chat
+module brutus
 
-go 1.24.2
+go 1.21
 
 require (
 	github.com/anthropics/anthropic-sdk-go v1.6.2
