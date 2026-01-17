@@ -1,0 +1,39 @@
+{
+  "name": "Agent 1 - Add Greeting",
+  "description": "Agent 1 edits mock1.txt to add a greeting function",
+  "user_messages": [
+    "Add a greeting function to mock1.txt"
+  ],
+  "mock_responses": [
+    {
+      "tool_call": "edit_file",
+      "input": {
+        "path": "testdata/multi-agent/status/agent-1.md",
+        "old_str": "Status: idle\nCurrent task: none",
+        "new_str": "Status: working\nCurrent task: adding greeting function"
+      }
+    },
+    {
+      "tool_call": "edit_file",
+      "input": {
+        "path": "testdata/multi-agent/mock1.txt",
+        "old_str": "TODO: Add a greeting function",
+        "new_str": "def greet(name):\n    return f\"Hello, {name}!\""
+      }
+    },
+    {
+      "tool_call": "edit_file",
+      "input": {
+        "path": "testdata/multi-agent/status/agent-1.md",
+        "old_str": "Status: working\nCurrent task: adding greeting function\nLast action: none",
+        "new_str": "Status: done\nCurrent task: complete\nLast action: Added greet() function to mock1.txt"
+      }
+    },
+    {
+      "content": "I've added the greeting function to mock1.txt and updated my status."
+    }
+  ],
+  "assertions": [
+    {"type": "tool_called", "value": "edit_file"}
+  ]
+}

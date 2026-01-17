@@ -1,0 +1,24 @@
+{
+  "name": "Multi-Tool Workflow",
+  "description": "Test listing files, reading one, and searching for patterns",
+  "user_messages": [
+    "What Go files are in the tools directory and what functions do they export?"
+  ],
+  "mock_responses": [
+    {
+      "tool_call": "list_files",
+      "input": {"path": "tools", "recursive": false}
+    },
+    {
+      "tool_call": "code_search",
+      "input": {"pattern": "^func [A-Z]", "path": "tools", "file_type": "go"}
+    },
+    {
+      "content": "The tools directory contains 5 Go files: tool.go, read.go, list.go, edit.go, bash.go, and search.go. They export functions like ReadFile, ListFiles, EditFile, Bash, and CodeSearch."
+    }
+  ],
+  "assertions": [
+    {"type": "tool_called", "value": "list_files"},
+    {"type": "tool_called", "value": "code_search"}
+  ]
+}

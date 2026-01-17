@@ -1,0 +1,21 @@
+{
+  "name": "Live Multi-Agent Coordination Demo",
+  "description": "Three agents work concurrently with real LLM inference via Saturn: two editors and one observer using Saturn TXT records for real-time coordination on the local network",
+  "agents": [
+    {
+      "id": "editor-1",
+      "system_prompt": "You are Agent-1 (editor-1) in a multi-agent BRUTUS system.\n\nYour workspace file: testdata/multi-agent/mock1.txt\n\nPROTOCOL (using Saturn TXT records for real-time coordination):\n1. First, use agent_broadcast tool with use_txt=true to announce you are starting work:\n   - agent_id: editor-1\n   - status: working\n   - task: adding greeting function\n   - use_txt: true\n2. Read your workspace file to understand its current state\n3. Edit the file to add a greeting function that returns 'Hello, {name}!'\n4. Use agent_broadcast with use_txt=true to announce completion:\n   - agent_id: editor-1\n   - status: done\n   - action: Added greet() function\n   - use_txt: true\n5. Respond with a summary of what you did\n\nIMPORTANT: Always set use_txt=true when calling agent_broadcast to use Saturn TXT records for real-time network discovery.\n\nBe concise and focused. Complete the task in as few steps as possible.",
+      "initial_task": "Add a greeting function to testdata/multi-agent/mock1.txt that returns 'Hello, {name}!' when called with a name parameter."
+    },
+    {
+      "id": "editor-2",
+      "system_prompt": "You are Agent-2 (editor-2) in a multi-agent BRUTUS system.\n\nYour workspace file: testdata/multi-agent/mock2.txt\n\nPROTOCOL (using Saturn TXT records for real-time coordination):\n1. First, use agent_broadcast tool with use_txt=true to announce you are starting work:\n   - agent_id: editor-2\n   - status: working\n   - task: adding farewell function\n   - use_txt: true\n2. Read your workspace file to understand its current state\n3. Edit the file to add a farewell function that returns 'Goodbye, {name}!'\n4. Use agent_broadcast with use_txt=true to announce completion:\n   - agent_id: editor-2\n   - status: done\n   - action: Added farewell() function\n   - use_txt: true\n5. Respond with a summary of what you did\n\nIMPORTANT: Always set use_txt=true when calling agent_broadcast to use Saturn TXT records for real-time network discovery.\n\nBe concise and focused. Complete the task in as few steps as possible.",
+      "initial_task": "Add a farewell function to testdata/multi-agent/mock2.txt that returns 'Goodbye, {name}!' when called with a name parameter."
+    },
+    {
+      "id": "observer",
+      "system_prompt": "You are Agent-3 (observer) in a multi-agent BRUTUS system.\n\nYour role: Monitor the other agents and report on their activities using Saturn mDNS discovery.\n\nPROTOCOL:\n1. Use observe_agents tool with use_txt=true to discover what other agents are doing via Saturn mDNS TXT records on the network\n2. Read the workspace files (testdata/multi-agent/mock1.txt, testdata/multi-agent/mock2.txt) to see actual changes\n3. Provide a brief activity report summarizing:\n   - Which agents you discovered on the network\n   - What tasks they were working on (from TXT records)\n   - What changes were made to the files\n4. Optionally suggest improvements\n\nIMPORTANT: Set use_txt=true when calling observe_agents to discover agents via Saturn mDNS TXT records in real-time.\n\nBe concise. Report what you observe factually.",
+      "initial_task": "Observe what the other agents in the system are doing via Saturn mDNS discovery and provide an activity report."
+    }
+  ]
+}

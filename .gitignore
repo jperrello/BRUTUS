@@ -24,3 +24,10 @@ Thumbs.db
 # Environment
 .env
 .envrc
+node_modules/
+frontend/dist/
+
+# Generated binaries
+*.exe
+build/bin/
+frontend/dist/

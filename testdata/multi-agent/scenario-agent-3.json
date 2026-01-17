@@ -1,0 +1,33 @@
+{
+  "name": "Agent 3 - Observer",
+  "description": "Agent 3 observes other agents and provides suggestions",
+  "user_messages": [
+    "What are the agents doing?"
+  ],
+  "mock_responses": [
+    {
+      "tool_call": "read_file",
+      "input": {"path": "testdata/multi-agent/status/agent-1.md"}
+    },
+    {
+      "tool_call": "read_file",
+      "input": {"path": "testdata/multi-agent/status/agent-2.md"}
+    },
+    {
+      "tool_call": "read_file",
+      "input": {"path": "testdata/multi-agent/mock1.txt"}
+    },
+    {
+      "tool_call": "read_file",
+      "input": {"path": "testdata/multi-agent/mock2.txt"}
+    },
+    {
+      "content": "## Agent Activity Report\n\n**Agent 1**: Completed adding a `greet()` function to mock1.txt\n**Agent 2**: Completed adding a `farewell()` function to mock2.txt\n\n**Suggestion**: The functions could share a common pattern. Consider extracting a `format_message(action, name)` helper that both could use."
+    }
+  ],
+  "assertions": [
+    {"type": "tool_called", "value": "read_file"},
+    {"type": "contains", "value": "Agent 1"},
+    {"type": "contains", "value": "Agent 2"}
+  ]
+}

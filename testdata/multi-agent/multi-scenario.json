@@ -1,0 +1,108 @@
+{
+  "name": "Multi-Agent Coordination Demo",
+  "description": "Three agents work concurrently: two editors and one observer",
+  "agents": [
+    {
+      "id": "agent-1",
+      "system_prompt": "You are Agent-1 in a multi-agent BRUTUS system.\n\nYour workspace file: testdata/multi-agent/mock1.txt\nYour status file: testdata/multi-agent/status/agent-1.md\n\nPROTOCOL:\n1. Before any edit, update your status file with:\n   - Status: working\n   - Current task: <description>\n2. Make your edit to mock1.txt\n3. After edit, update your status file with:\n   - Status: done\n   - Last action: <what you did>\n\nYour task: Add a greeting function to mock1.txt.",
+      "user_messages": ["Add a greeting function to mock1.txt"],
+      "mock_responses": [
+        {
+          "tool_call": "edit_file",
+          "input": {
+            "path": "testdata/multi-agent/status/agent-1.md",
+            "old_str": "Status: idle\nCurrent task: none",
+            "new_str": "Status: working\nCurrent task: adding greeting function"
+          }
+        },
+        {
+          "tool_call": "edit_file",
+          "input": {
+            "path": "testdata/multi-agent/mock1.txt",
+            "old_str": "TODO: Add a greeting function",
+            "new_str": "def greet(name):\n    return f\"Hello, {name}!\""
+          }
+        },
+        {
+          "tool_call": "edit_file",
+          "input": {
+            "path": "testdata/multi-agent/status/agent-1.md",
+            "old_str": "Status: working\nCurrent task: adding greeting function\nLast action: none",
+            "new_str": "Status: done\nCurrent task: complete\nLast action: Added greet() function to mock1.txt"
+          }
+        },
+        {
+          "content": "I've added the greeting function to mock1.txt and updated my status."
+        }
+      ]
+    },
+    {
+      "id": "agent-2",
+      "system_prompt": "You are Agent-2 in a multi-agent BRUTUS system.\n\nYour workspace file: testdata/multi-agent/mock2.txt\nYour status file: testdata/multi-agent/status/agent-2.md\n\nPROTOCOL:\n1. Before any edit, update your status file with:\n   - Status: working\n   - Current task: <description>\n2. Make your edit to mock2.txt\n3. After edit, update your status file with:\n   - Status: done\n   - Last action: <what you did>\n\nYour task: Add a farewell function to mock2.txt.",
+      "user_messages": ["Add a farewell function to mock2.txt"],
+      "mock_responses": [
+        {
+          "tool_call": "edit_file",
+          "input": {
+            "path": "testdata/multi-agent/status/agent-2.md",
+            "old_str": "Status: idle\nCurrent task: none",
+            "new_str": "Status: working\nCurrent task: adding farewell function"
+          }
+        },
+        {
+          "tool_call": "edit_file",
+          "input": {
+            "path": "testdata/multi-agent/mock2.txt",
+            "old_str": "TODO: Add a farewell function",
+            "new_str": "def farewell(name):\n    return f\"Goodbye, {name}!\""
+          }
+        },
+        {
+          "tool_call": "edit_file",
+          "input": {
+            "path": "testdata/multi-agent/status/agent-2.md",
+            "old_str": "Status: working\nCurrent task: adding farewell function\nLast action: none",
+            "new_str": "Status: done\nCurrent task: complete\nLast action: Added farewell() function to mock2.txt"
+          }
+        },
+        {
+          "content": "I've added the farewell function to mock2.txt and updated my status."
+        }
+      ]
+    },
+    {
+      "id": "agent-3",
+      "system_prompt": "You are Agent-3, the OBSERVER in a multi-agent BRUTUS system.\n\nYour role: Monitor Agent-1 and Agent-2, provide suggestions.\n\nAvailable files to read:\n- testdata/multi-agent/mock1.txt (Agent 1's work)\n- testdata/multi-agent/mock2.txt (Agent 2's work)\n- testdata/multi-agent/status/agent-1.md (Agent 1's status)\n- testdata/multi-agent/status/agent-2.md (Agent 2's status)\n\nPROTOCOL:\n1. Read all status files to see what agents are doing\n2. Read mock files to see their actual work\n3. Provide a summary of activity\n4. Offer one suggestion for improvement",
+      "user_messages": ["What are the agents doing?"],
+      "mock_responses": [
+        {
+          "tool_call": "read_file",
+          "input": {"path": "testdata/multi-agent/status/agent-1.md"}
+        },
+        {
+          "tool_call": "read_file",
+          "input": {"path": "testdata/multi-agent/status/agent-2.md"}
+        },
+        {
+          "tool_call": "read_file",
+          "input": {"path": "testdata/multi-agent/mock1.txt"}
+        },
+        {
+          "tool_call": "read_file",
+          "input": {"path": "testdata/multi-agent/mock2.txt"}
+        },
+        {
+          "content": "## Agent Activity Report\n\n**Agent 1**: Completed adding a `greet()` function to mock1.txt\n**Agent 2**: Completed adding a `farewell()` function to mock2.txt\n\n**Suggestion**: The functions could share a common pattern. Consider extracting a `format_message(action, name)` helper that both could use."
+        }
+      ]
+    }
+  ],
+  "assertions": [
+    {"agent_id": "agent-1", "type": "tool_called", "value": "edit_file"},
+    {"agent_id": "agent-2", "type": "tool_called", "value": "edit_file"},
+    {"agent_id": "agent-3", "type": "tool_called", "value": "read_file"},
+    {"agent_id": "agent-1", "type": "success", "value": ""},
+    {"agent_id": "agent-2", "type": "success", "value": ""},
+    {"agent_id": "agent-3", "type": "success", "value": ""}
+  ]
+}

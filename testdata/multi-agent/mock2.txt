@@ -1,0 +1,5 @@
+# Mock File 2
+This file will be edited by Agent 2.
+
+def farewell(name):
+    return f"Goodbye, {name}!"

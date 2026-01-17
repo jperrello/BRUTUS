@@ -1,0 +1,19 @@
+{
+  "name": "Read File Scenario",
+  "description": "Test reading a file and getting a summary",
+  "user_messages": [
+    "What's in main.go?"
+  ],
+  "mock_responses": [
+    {
+      "tool_call": "read_file",
+      "input": {"path": "main.go"}
+    },
+    {
+      "content": "The main.go file contains the entry point for BRUTUS. It initializes the Wails application and sets up the GUI agent."
+    }
+  ],
+  "assertions": [
+    {"type": "tool_called", "value": "read_file"}
+  ]
+}

@@ -1,0 +1,5 @@
+# Mock File 1
+This file will be edited by Agent 1.
+
+def greet(name):
+    return f"Hello, {name}!"

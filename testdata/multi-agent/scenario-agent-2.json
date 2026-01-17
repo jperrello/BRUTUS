@@ -1,0 +1,39 @@
+{
+  "name": "Agent 2 - Add Farewell",
+  "description": "Agent 2 edits mock2.txt to add a farewell function",
+  "user_messages": [
+    "Add a farewell function to mock2.txt"
+  ],
+  "mock_responses": [
+    {
+      "tool_call": "edit_file",
+      "input": {
+        "path": "testdata/multi-agent/status/agent-2.md",
+        "old_str": "Status: idle\nCurrent task: none",
+        "new_str": "Status: working\nCurrent task: adding farewell function"
+      }
+    },
+    {
+      "tool_call": "edit_file",
+      "input": {
+        "path": "testdata/multi-agent/mock2.txt",
+        "old_str": "TODO: Add a farewell function",
+        "new_str": "def farewell(name):\n    return f\"Goodbye, {name}!\""
+      }
+    },
+    {
+      "tool_call": "edit_file",
+      "input": {
+        "path": "testdata/multi-agent/status/agent-2.md",
+        "old_str": "Status: working\nCurrent task: adding farewell function\nLast action: none",
+        "new_str": "Status: done\nCurrent task: complete\nLast action: Added farewell() function to mock2.txt"
+      }
+    },
+    {
+      "content": "I've added the farewell function to mock2.txt and updated my status."
+    }
+  ],
+  "assertions": [
+    {"type": "tool_called", "value": "edit_file"}
+  ]
+}
