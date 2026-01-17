@@ -2,9 +2,34 @@ package provider
 
 import (
 	"context"
+	"net"
+	"net/http"
 	"sync"
 	"time"
 )
+
+var globalServiceCache = NewServiceCache(30 * time.Second)
+
+type Discoverer interface {
+	Discover(ctx context.Context, timeout time.Duration) ([]SaturnService, error)
+	DiscoverFiltered(ctx context.Context, timeout time.Duration, filter DiscoveryFilter) ([]SaturnService, error)
+}
+
+func CreateDiscoverer(cache *ServiceCache) Discoverer {
+	return NewZeroconfDiscoverer(cache)
+}
+
+func createPooledTransport() *http.Transport {
+	return &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 10,
+		IdleConnTimeout:     90 * time.Second,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+	}
+}
 
 type CachedService struct {
 	Service   SaturnService

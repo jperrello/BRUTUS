@@ -17,6 +17,9 @@ type Provider interface {
 	// The response may include tool calls that need to be executed.
 	Chat(ctx context.Context, systemPrompt string, messages []Message, tools []tools.Tool) (Message, error)
 
+	// ChatStream sends a conversation and returns a channel for streaming responses.
+	ChatStream(ctx context.Context, systemPrompt string, messages []Message, tools []tools.Tool) (<-chan StreamDelta, error)
+
 	// Name returns the provider name for logging.
 	Name() string
 
@@ -57,4 +60,58 @@ type ToolResult struct {
 	ID      string // Matches ToolCall.ID
 	Content string // Tool output
 	IsError bool   // Whether the result is an error
+}
+
+// StreamDelta represents a chunk from streaming responses.
+type StreamDelta struct {
+	Content  string    // Text content chunk
+	ToolCall *ToolCall // Partial tool call (accumulated)
+	Error    error     // Error if streaming failed
+	Done     bool      // True when stream is complete
+}
+
+// DiscoveryFilter specifies criteria for filtering discovered services.
+type DiscoveryFilter struct {
+	MinPriority   int      // Only services with priority <= this value
+	RequiredAPI   string   // Required API type (e.g., "openai")
+	RequiredGPU   bool     // Must have GPU
+	MinVRAM       int      // Minimum VRAM in GB
+	RequiredModel string   // Must support this model
+	LocalOnly     bool     // Exclude remote APIs
+}
+
+// FilterServices applies a filter to a list of services.
+func FilterServices(services []SaturnService, filter DiscoveryFilter) []SaturnService {
+	var result []SaturnService
+	for _, svc := range services {
+		if filter.MinPriority > 0 && svc.Priority > filter.MinPriority {
+			continue
+		}
+		if filter.RequiredAPI != "" && svc.APIType != filter.RequiredAPI {
+			continue
+		}
+		if filter.RequiredGPU && svc.GPU == "" {
+			continue
+		}
+		if filter.MinVRAM > 0 && svc.VRAMGb < filter.MinVRAM {
+			continue
+		}
+		if filter.RequiredModel != "" {
+			hasModel := false
+			for _, m := range svc.Models {
+				if m == filter.RequiredModel {
+					hasModel = true
+					break
+				}
+			}
+			if !hasModel {
+				continue
+			}
+		}
+		if filter.LocalOnly && svc.APIBase != "" {
+			continue
+		}
+		result = append(result, svc)
+	}
+	return result
 }

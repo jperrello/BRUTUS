@@ -26,6 +26,22 @@ export function NewNamedAgent(arg1, arg2) {
   return window['go']['main']['App']['NewNamedAgent'](arg1, arg2);
 }
 
+export function PTYKill(arg1) {
+  return window['go']['main']['App']['PTYKill'](arg1);
+}
+
+export function PTYList() {
+  return window['go']['main']['App']['PTYList']();
+}
+
+export function PTYSpawn(arg1) {
+  return window['go']['main']['App']['PTYSpawn'](arg1);
+}
+
+export function PTYWrite(arg1, arg2) {
+  return window['go']['main']['App']['PTYWrite'](arg1, arg2);
+}
+
 export function RespondToApproval(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['RespondToApproval'](arg1, arg2, arg3, arg4);
 }

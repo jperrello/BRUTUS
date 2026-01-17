@@ -53,7 +53,7 @@ func discoverSaturnDNSSD(ctx context.Context, timeout time.Duration) ([]SaturnSe
 	defer cancel()
 
 	cmd := exec.CommandContext(browseCtx, "dns-sd", "-B", "_saturn._tcp", "local.")
-	hideCommandWindow(cmd)
+	hideWindow(cmd)
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Run()
@@ -115,7 +115,7 @@ func resolveInstance(ctx context.Context, instance string) (SaturnService, error
 	defer cancel()
 
 	cmd := exec.CommandContext(resolveCtx, "dns-sd", "-L", instance, "_saturn._tcp", "local.")
-	hideCommandWindow(cmd)
+	hideWindow(cmd)
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Run()

@@ -1,12 +1,14 @@
 package provider
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"brutus/tools"
@@ -77,6 +79,10 @@ func (s *Saturn) GetModel() string {
 
 func (s *Saturn) SetModel(model string) {
 	s.model = model
+}
+
+func (s *Saturn) GetService() *SaturnService {
+	return s.service
 }
 
 func (s *Saturn) ListModels(ctx context.Context) ([]ModelInfo, error) {
@@ -172,6 +178,128 @@ func (s *Saturn) Chat(ctx context.Context, systemPrompt string, messages []Messa
 	return convertFromOpenAIResponse(openAIResp), nil
 }
 
+func (s *Saturn) ChatStream(ctx context.Context, systemPrompt string, messages []Message, toolDefs []tools.Tool) (<-chan StreamDelta, error) {
+	req := openAIRequest{
+		Model:     s.model,
+		MaxTokens: s.maxTokens,
+		Messages:  convertToOpenAIMessages(systemPrompt, messages),
+		Tools:     convertToOpenAITools(toolDefs),
+		Stream:    true,
+	}
+
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST",
+		s.service.URL()+"/v1/chat/completions",
+		bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "text/event-stream")
+	if s.service.EphemeralKey != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+s.service.EphemeralKey)
+	}
+
+	resp, err := s.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
+	}
+
+	ch := make(chan StreamDelta, 10)
+	go s.processStream(ctx, resp, ch)
+	return ch, nil
+}
+
+func (s *Saturn) processStream(ctx context.Context, resp *http.Response, ch chan<- StreamDelta) {
+	defer resp.Body.Close()
+	defer close(ch)
+
+	reader := bufio.NewReader(resp.Body)
+	var accumulatedToolCalls []ToolCall
+
+	for {
+		select {
+		case <-ctx.Done():
+			ch <- StreamDelta{Error: ctx.Err(), Done: true}
+			return
+		default:
+		}
+
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err != io.EOF {
+				ch <- StreamDelta{Error: err, Done: true}
+			} else {
+				ch <- StreamDelta{Done: true}
+			}
+			return
+		}
+
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		if !strings.HasPrefix(line, "data: ") {
+			continue
+		}
+
+		data := strings.TrimPrefix(line, "data: ")
+		if data == "[DONE]" {
+			ch <- StreamDelta{Done: true}
+			return
+		}
+
+		var chunk openAIStreamChunk
+		if err := json.Unmarshal([]byte(data), &chunk); err != nil {
+			continue
+		}
+
+		if len(chunk.Choices) == 0 {
+			continue
+		}
+
+		delta := chunk.Choices[0].Delta
+
+		if delta.Content != "" {
+			ch <- StreamDelta{Content: delta.Content}
+		}
+
+		for _, tc := range delta.ToolCalls {
+			for len(accumulatedToolCalls) <= tc.Index {
+				accumulatedToolCalls = append(accumulatedToolCalls, ToolCall{})
+			}
+			if tc.ID != "" {
+				accumulatedToolCalls[tc.Index].ID = tc.ID
+			}
+			if tc.Function.Name != "" {
+				accumulatedToolCalls[tc.Index].Name = tc.Function.Name
+			}
+			if tc.Function.Arguments != "" {
+				current := string(accumulatedToolCalls[tc.Index].Input)
+				accumulatedToolCalls[tc.Index].Input = json.RawMessage(current + tc.Function.Arguments)
+			}
+			ch <- StreamDelta{ToolCall: &accumulatedToolCalls[tc.Index]}
+		}
+
+		if chunk.Choices[0].FinishReason != "" {
+			ch <- StreamDelta{Done: true}
+			return
+		}
+	}
+}
+
 func healthCheck(svc SaturnService) error {
 	if svc.APIBase != "" {
 		return nil // Remote APIs don't have health endpoints
@@ -197,6 +325,7 @@ type openAIRequest struct {
 	MaxTokens int             `json:"max_tokens,omitempty"`
 	Messages  []openAIMessage `json:"messages"`
 	Tools     []openAITool    `json:"tools,omitempty"`
+	Stream    bool            `json:"stream,omitempty"`
 }
 
 type openAIMessage struct {
@@ -227,6 +356,23 @@ type openAITool struct {
 type openAIResponse struct {
 	Choices []struct {
 		Message openAIMessage `json:"message"`
+	} `json:"choices"`
+}
+
+type openAIStreamChunk struct {
+	Choices []struct {
+		Delta struct {
+			Content   string `json:"content"`
+			ToolCalls []struct {
+				Index    int    `json:"index"`
+				ID       string `json:"id"`
+				Function struct {
+					Name      string `json:"name"`
+					Arguments string `json:"arguments"`
+				} `json:"function"`
+			} `json:"tool_calls"`
+		} `json:"delta"`
+		FinishReason string `json:"finish_reason"`
 	} `json:"choices"`
 }
 

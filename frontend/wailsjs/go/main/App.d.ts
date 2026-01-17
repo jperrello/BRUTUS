@@ -14,6 +14,14 @@ export function NewAgent(arg1:string):Promise<string>;
 
 export function NewNamedAgent(arg1:string,arg2:string):Promise<string>;
 
+export function PTYKill(arg1:string):Promise<void>;
+
+export function PTYList():Promise<Array<string>>;
+
+export function PTYSpawn(arg1:string):Promise<string>;
+
+export function PTYWrite(arg1:string,arg2:string):Promise<void>;
+
 export function RespondToApproval(arg1:string,arg2:string,arg3:boolean,arg4:string):Promise<void>;
 
 export function SendMessage(arg1:string,arg2:string):Promise<void>;

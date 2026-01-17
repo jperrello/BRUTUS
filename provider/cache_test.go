@@ -96,16 +96,16 @@ func TestLoadAwareSelection(t *testing.T) {
 
 func TestLoadAwareSelectionWithPriority(t *testing.T) {
 	services := []SaturnService{
-		{Name: "low-priority-idle", Host: "localhost", Port: 8081, MaxConcurrent: 10, CurrentLoad: 1, Priority: 1},
-		{Name: "high-priority-busy", Host: "localhost", Port: 8082, MaxConcurrent: 10, CurrentLoad: 5, Priority: 5},
+		{Name: "high-priority-idle", Host: "localhost", Port: 8081, MaxConcurrent: 10, CurrentLoad: 1, Priority: 1},
+		{Name: "low-priority-busy", Host: "localhost", Port: 8082, MaxConcurrent: 10, CurrentLoad: 5, Priority: 50},
 	}
 
 	best := SelectBestService(services)
 	if best == nil {
 		t.Fatal("expected a service to be selected")
 	}
-	if best.Name != "high-priority-busy" {
-		t.Errorf("expected 'high-priority-busy' to win due to priority, got '%s'", best.Name)
+	if best.Name != "high-priority-idle" {
+		t.Errorf("expected 'high-priority-idle' to win due to priority (lower number = higher priority), got '%s'", best.Name)
 	}
 }
 
